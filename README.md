@@ -21,7 +21,7 @@ The demo can be used as an example or a seed project. Local execution requires t
 
 Showcases how to fit a large number of charts into 1 view and fallback to HTML scroll bars when all of the content does not fit to view.
 
-This approach allows fitting incredible amounts of data visualization into a single view. Note that with massive 10000+ high or wide charts to you may run into some precision issues and the charts might not look proper. This is due to WebGL limitations.
+This approach allows fitting incredible amounts of data visualization into a single view.
 
 This line chart uses thin line rendering for the best performance, especially visible on devices with weak GPUs such as mobile devices and laptops.
 For a thicker alternative you can check out [a similar line chart with best-looking line graphics](https://www.lightningchart.com/lightningchart-js-interactive-examples/examples/0028-multiChannelLineProgressiveOwnAxes.html)
@@ -56,8 +56,8 @@ Direct developer email support can be purchased through a [Support Plan][4] or b
 © LightningChart Ltd 2009-2022. All rights reserved.
 
 
-[XY cartesian chart]: https://lightningchart.com/js-charts/api-documentation/v4.2.0/classes/ChartXY.html
-[Line series]: https://lightningchart.com/js-charts/api-documentation/v4.2.0/classes/LineSeries.html
-[Data patterns]: https://lightningchart.com/js-charts/api-documentation/v4.2.0/interfaces/DataPattern.html
-[Axis]: https://lightningchart.com/js-charts/api-documentation/v4.2.0/classes/Axis.html
+[XY cartesian chart]: https://lightningchart.com/js-charts/api-documentation/v5.0.1/classes/ChartXY.html
+[Line series]: https://lightningchart.com/js-charts/api-documentation/v5.0.1/classes/LineSeries.html
+[Data patterns]: https://lightningchart.com/js-charts/api-documentation/v5.0.1/interfaces/DataPattern.html
+[Axis]: https://lightningchart.com/js-charts/api-documentation/v5.0.1/classes/Axis.html
 

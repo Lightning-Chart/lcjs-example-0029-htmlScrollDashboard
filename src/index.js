@@ -10,9 +10,6 @@ const SIGNALS = new Array(20).fill(0).map((_, i) => ({
     title: `Ch ${i + 1}`,
 }))
 const DEFAULT_X_RANGE_MS = 10 * 1000
-const PADDING_BOTTOM = 30
-const PADDING_TOP = 40
-const PADDING_LEFT = 60
 const DASHBOARD_HEIGHT = 1400
 
 const {
@@ -30,39 +27,28 @@ const {
 const { createProgressiveFunctionGenerator } = xydata
 
 const exampleContainer = document.getElementById('chart') || document.body
-const container = document.createElement('div')
-exampleContainer.append(container)
-container.style.width = '100%'
-container.style.height = `${DASHBOARD_HEIGHT}px`
+const layout = document.createElement('div')
+exampleContainer.append(layout)
+layout.style.width = '100%'
+layout.style.height = `${DASHBOARD_HEIGHT}px`
+layout.style.display = 'flex'
+layout.style.flexDirection = 'column'
 
-const dashboard = lightningChart()
-    .Dashboard({
-        container,
-        numberOfColumns: 1,
-        numberOfRows: SIGNALS.length,
-        // theme: Themes.darkGold
-    })
-    .setSplitterStyle(emptyLine)
-
-// Layout Dashboard with static height.
-const totalHeight = DASHBOARD_HEIGHT
-const signalHeight = (totalHeight - PADDING_BOTTOM - PADDING_TOP) / SIGNALS.length
-SIGNALS.forEach((_, iSignal) => {
-    const chHeight = signalHeight + (iSignal === 0 ? PADDING_TOP : 0) + (iSignal === SIGNALS.length - 1 ? PADDING_BOTTOM : 0)
-    dashboard.setRowHeight(iSignal, chHeight)
-})
+const lc = lightningChart()
 
 const channels = SIGNALS.map((signal, iSignal) => {
-    const chart = dashboard
-        .createChartXY({
-            columnIndex: 0,
-            rowIndex: iSignal,
+    const container = document.createElement('div')
+    layout.append(container)
+    container.style.height = '20vh'
+    const chart = lc
+        .ChartXY({
+            container,
+            // theme: Themes.darkGold
         })
         .setTitle('')
         .setPadding({
             top: 0,
             bottom: 0,
-            left: 0,
         })
         .setAutoCursorMode(AutoCursorModes.disabled)
         .setBackgroundStrokeStyle(emptyLine)
@@ -80,7 +66,7 @@ const channels = SIGNALS.map((signal, iSignal) => {
         .setStrokeStyle(emptyLine)
         .setTitle(signal.title)
         .setTitleRotation(0)
-        .setThickness(PADDING_LEFT)
+        .setThickness(60)
 
     const series = chart
         .addLineSeries({
@@ -99,22 +85,12 @@ const channelBottom = channels[channels.length - 1]
 
 channelTop.chart.setTitle(`Multi-channel real-time monitoring (${SIGNALS.length} chs, 1000 Hz)`)
 
-const axisX = channelBottom.axisX
-    .setThickness(PADDING_BOTTOM)
-    .setTickStrategy(AxisTickStrategies.Time, (ticks) =>
-        ticks
-            .setMajorTickStyle((major) => major.setGridStrokeStyle(emptyLine))
-            .setMinorTickStyle((minor) => minor.setGridStrokeStyle(emptyLine)),
-    )
+const axisX = channelBottom.axisX.setTickStrategy(AxisTickStrategies.Time, (ticks) =>
+    ticks
+        .setMajorTickStyle((major) => major.setGridStrokeStyle(emptyLine))
+        .setMinorTickStyle((minor) => minor.setGridStrokeStyle(emptyLine)),
+)
 synchronizeAxisIntervals(...channels.map((ch) => ch.axisX))
-
-// Add Legend.
-const legend = dashboard
-    .addLegendBox()
-    .add(dashboard)
-    .setOrigin(UIOrigins.RightCenter)
-    .setPosition({ x: 100, y: 50 })
-    .setMargin({ right: 30 })
 
 // Custom interactions for zooming in/out along Time axis while keeping data scrolling.
 axisX.setNibInteractionScaleByDragging(false).setNibInteractionScaleByWheeling(false).setAxisInteractionZoomByWheeling(false)
@@ -122,7 +98,7 @@ const customZoomX = (_, event) => {
     const interval = axisX.getInterval()
     const range = interval.end - interval.start
     const newRange = range + Math.sign(event.deltaY) * 0.1 * Math.abs(range)
-    axisX.setIntervall({ start: interval.end - newRange, end: interval.end, stopAxisAfter: false })
+    axisX.setInterval({ start: interval.end - newRange, end: interval.end, stopAxisAfter: false })
     event.preventDefault()
     event.stopPropagation()
 }
@@ -133,7 +109,7 @@ channels.forEach((channel) => {
 })
 
 // Add LCJS user interface button for resetting view.
-const buttonReset = dashboard
+const buttonReset = channels[channels.length - 1].chart
     .addUIElement()
     .setText('Reset')
     .setPosition({ x: 0, y: 0 })
@@ -169,17 +145,6 @@ const signals = [
         func: (x) => Math.sin(x / 400) * Math.cos(x / 1300),
     },
 ]
-
-// Little utility to produce random numbers for example purposes without continuous usage of heavy Math.random() function.
-const random = (() => {
-    const patternLen = 83424
-    const pattern = new Array(patternLen).fill(0).map((_) => Math.random() * 0.04)
-    let i = 0
-    return () => {
-        i = (i + 1) % patternLen
-        return pattern[i]
-    }
-})()
 
 // Generate data sets for each signal.
 Promise.all(
