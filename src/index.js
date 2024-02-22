@@ -21,6 +21,7 @@ const {
     synchronizeAxisIntervals,
     UIOrigins,
     UIDraggingModes,
+    emptyFill,
     Themes,
 } = lcjs
 
@@ -59,7 +60,7 @@ const channels = SIGNALS.map((signal, iSignal) => {
         .setTickStrategy(AxisTickStrategies.Empty)
         .setStrokeStyle(emptyLine)
         .setScrollStrategy(AxisScrollStrategies.progressive)
-        .setInterval({ start: -DEFAULT_X_RANGE_MS, end: 0, stopAxisAfter: false })
+        .setDefaultInterval((state) => ({ end: state.dataMax, start: (state.dataMax ?? 0) - DEFAULT_X_RANGE_MS, stopAxisAfter: false }))
     const axisY = chart
         .getDefaultAxisY()
         .setTickStrategy(AxisTickStrategies.Empty)
@@ -69,12 +70,13 @@ const channels = SIGNALS.map((signal, iSignal) => {
         .setThickness(60)
 
     const series = chart
-        .addLineSeries({
-            dataPattern: { pattern: 'ProgressiveX', regularProgressiveStep: true },
+        .addPointLineAreaSeries({
+            dataPattern: 'ProgressiveX',
             automaticColorIndex: iSignal,
         })
         .setName(`Channel ${iSignal + 1}`)
-        .setDataCleaning({ minDataPointCount: 10000 })
+        .setMaxSampleCount(20_000)
+        .setAreaFillStyle(emptyFill)
         // Use -1 thickness for best performance, especially on low end devices like mobile / laptops.
         .setStrokeStyle((style) => style.setThickness(-1))
 
@@ -183,7 +185,7 @@ Promise.all(
             }
             seriesNewDataPoints[iChannel] = newDataPoints
         }
-        channels.forEach((channel, iChannel) => channel.series.add(seriesNewDataPoints[iChannel]))
+        channels.forEach((channel, iChannel) => channel.series.appendJSON(seriesNewDataPoints[iChannel]))
         pushedDataCount += newDataPointsCount
         requestAnimationFrame(streamData)
     }
