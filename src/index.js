@@ -44,7 +44,7 @@ const channels = SIGNALS.map((signal, iSignal) => {
     const chart = lc
         .ChartXY({
             container,
-            theme: Themes[new URLSearchParams(window.location.search).get('theme') || 'darkGold'] || undefined
+            theme: Themes[new URLSearchParams(window.location.search).get('theme') || 'darkGold'] || undefined,
         })
         .setTitle('')
         .setPadding({
