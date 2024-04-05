@@ -35,7 +35,9 @@ layout.style.height = `${DASHBOARD_HEIGHT}px`
 layout.style.display = 'flex'
 layout.style.flexDirection = 'column'
 
-const lc = lightningChart()
+const lc = lightningChart({
+            resourcesBaseUrl: new URL(document.head.baseURI).origin + new URL(document.head.baseURI).pathname + 'resources/',
+        })
 
 const channels = SIGNALS.map((signal, iSignal) => {
     const container = document.createElement('div')
