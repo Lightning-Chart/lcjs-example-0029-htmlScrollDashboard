@@ -18,7 +18,6 @@ const {
     emptyLine,
     AxisTickStrategies,
     AxisScrollStrategies,
-    synchronizeAxisIntervals,
     UIOrigins,
     UIDraggingModes,
     emptyFill,
@@ -28,73 +27,55 @@ const {
 const { createProgressiveFunctionGenerator } = xydata
 
 const exampleContainer = document.getElementById('chart') || document.body
-const layout = document.createElement('div')
-exampleContainer.append(layout)
-layout.style.width = '100%'
-layout.style.height = `${DASHBOARD_HEIGHT}px`
-layout.style.display = 'flex'
-layout.style.flexDirection = 'column'
+const chartContainer = document.createElement('div')
+exampleContainer.append(chartContainer)
+chartContainer.style.width = '100%'
+chartContainer.style.height = `${DASHBOARD_HEIGHT}px`
+chartContainer.style.display = 'flex'
+chartContainer.style.flexDirection = 'column'
 
 const lc = lightningChart({
             resourcesBaseUrl: new URL(document.head.baseURI).origin + new URL(document.head.baseURI).pathname + 'resources/',
         })
+const chart = lc
+    .ChartXY({
+        container: chartContainer,
+        theme: Themes[new URLSearchParams(window.location.search).get('theme') || 'darkGold'] || undefined,
+    })
+    .setTitle(`Multi-channel real-time monitoring (${SIGNALS.length} chs, 1000 Hz)`)
+    .setAutoCursorMode(AutoCursorModes.disabled)
+    .setMouseInteractions(false)
 
+const axisX = chart
+    .getDefaultAxisX()
+    .setTickStrategy(AxisTickStrategies.Time)
+    .setScrollStrategy(AxisScrollStrategies.progressive)
+    .setDefaultInterval((state) => ({ end: state.dataMax, start: (state.dataMax ?? 0) - DEFAULT_X_RANGE_MS, stopAxisAfter: false }))
+
+chart.getDefaultAxisY().dispose()
 const channels = SIGNALS.map((signal, iSignal) => {
-    const container = document.createElement('div')
-    layout.append(container)
-    container.style.height = '20vh'
-    const chart = lc
-        .ChartXY({
-            container,
-            theme: Themes[new URLSearchParams(window.location.search).get('theme') || 'darkGold'] || undefined,
-        })
-        .setTitle('')
-        .setPadding({
-            top: 0,
-            bottom: 0,
-        })
-        .setAutoCursorMode(AutoCursorModes.disabled)
-        .setBackgroundStrokeStyle(emptyLine)
-        .setMouseInteractions(false)
-
-    const axisX = chart
-        .getDefaultAxisX()
-        .setTickStrategy(AxisTickStrategies.Empty)
-        .setStrokeStyle(emptyLine)
-        .setScrollStrategy(AxisScrollStrategies.progressive)
-        .setDefaultInterval((state) => ({ end: state.dataMax, start: (state.dataMax ?? 0) - DEFAULT_X_RANGE_MS, stopAxisAfter: false }))
+    const iStack = SIGNALS.length - (iSignal + 1)
     const axisY = chart
-        .getDefaultAxisY()
+        .addAxisY({ iStack })
         .setTickStrategy(AxisTickStrategies.Empty)
-        .setStrokeStyle(emptyLine)
-        .setTitle(signal.title)
+        .setTitle(`Ch ${SIGNALS.length - iSignal}`)
         .setTitleRotation(0)
-        .setThickness(60)
+        .setMargins(iStack > 0 ? 3 : 0, iStack < SIGNALS.length - 1 ? 3 : 0)
+        .setStrokeStyle(emptyLine)
 
     const series = chart
         .addPointLineAreaSeries({
             dataPattern: 'ProgressiveX',
             automaticColorIndex: iSignal,
+            yAxis: axisY,
         })
-        .setName(`Channel ${iSignal + 1}`)
         .setMaxSampleCount(20_000)
         .setAreaFillStyle(emptyFill)
         // Use -1 thickness for best performance, especially on low end devices like mobile / laptops.
         .setStrokeStyle((style) => style.setThickness(-1))
 
-    return { chart, series, axisX, axisY }
+    return { series, axisY }
 })
-const channelTop = channels[0]
-const channelBottom = channels[channels.length - 1]
-
-channelTop.chart.setTitle(`Multi-channel real-time monitoring (${SIGNALS.length} chs, 1000 Hz)`)
-
-const axisX = channelBottom.axisX.setTickStrategy(AxisTickStrategies.Time, (ticks) =>
-    ticks
-        .setMajorTickStyle((major) => major.setGridStrokeStyle(emptyLine))
-        .setMinorTickStyle((minor) => minor.setGridStrokeStyle(emptyLine)),
-)
-synchronizeAxisIntervals(...channels.map((ch) => ch.axisX))
 
 // Custom interactions for zooming in/out along Time axis while keeping data scrolling.
 axisX.setNibInteractionScaleByDragging(false).setNibInteractionScaleByWheeling(false).setAxisInteractionZoomByWheeling(false)
@@ -107,13 +88,13 @@ const customZoomX = (_, event) => {
     event.stopPropagation()
 }
 axisX.onAxisInteractionAreaMouseWheel(customZoomX)
+chart.onSeriesBackgroundMouseWheel(customZoomX)
 channels.forEach((channel) => {
-    channel.chart.onSeriesBackgroundMouseWheel(customZoomX)
     channel.series.onMouseWheel(customZoomX)
 })
 
 // Add LCJS user interface button for resetting view.
-const buttonReset = channels[channels.length - 1].chart
+const buttonReset = chart
     .addUIElement()
     .setText('Reset')
     .setPosition({ x: 0, y: 0 })
@@ -198,14 +179,14 @@ Promise.all(
 let tFpsStart = window.performance.now()
 let frames = 0
 let fps = 0
-const title = channelTop.chart.getTitle()
+const title = chart.getTitle()
 const recordFrame = () => {
     frames++
     const tNow = window.performance.now()
     fps = 1000 / ((tNow - tFpsStart) / frames)
     requestAnimationFrame(recordFrame)
 
-    channelTop.chart.setTitle(`${title} (FPS: ${fps.toFixed(1)})`)
+    chart.setTitle(`${title} (FPS: ${fps.toFixed(1)})`)
 }
 requestAnimationFrame(recordFrame)
 setInterval(() => {
