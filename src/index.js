@@ -2,8 +2,8 @@
  * Lightning-fast Line Chart visualization over multiple channels that progress on the same X Axis
  */
 
-const lcjs = require('@arction/lcjs')
-const xydata = require('@arction/xydata')
+const lcjs = require('@lightningchart/lcjs')
+const xydata = require('@lightningchart/xydata')
 
 // NOTE: Assuming predefined number of stacked channels.
 const SIGNALS = new Array(20).fill(0).map((_, i) => ({
@@ -43,8 +43,8 @@ const chart = lc
         theme: Themes[new URLSearchParams(window.location.search).get('theme') || 'darkGold'] || undefined,
     })
     .setTitle(`Multi-channel real-time monitoring (${SIGNALS.length} chs, 1000 Hz)`)
-    .setAutoCursorMode(AutoCursorModes.disabled)
     .setMouseInteractions(false)
+    .setCursorMode('show-nearest')
 
 const axisX = chart
     .getDefaultAxisX()
