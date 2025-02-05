@@ -43,7 +43,6 @@ const chart = lc
         theme: Themes[new URLSearchParams(window.location.search).get('theme') || 'darkGold'] || undefined,
     })
     .setTitle(`Multi-channel real-time monitoring (${SIGNALS.length} chs, 1000 Hz)`)
-    .setMouseInteractions(false)
     .setCursorMode('show-nearest')
 
 const axisX = chart
@@ -73,24 +72,9 @@ const channels = SIGNALS.map((signal, iSignal) => {
         .setAreaFillStyle(emptyFill)
         // Use -1 thickness for best performance, especially on low end devices like mobile / laptops.
         .setStrokeStyle((style) => style.setThickness(-1))
+        .setClipping(false)
 
     return { series, axisY }
-})
-
-// Custom interactions for zooming in/out along Time axis while keeping data scrolling.
-axisX.setNibInteractionScaleByDragging(false).setNibInteractionScaleByWheeling(false).setAxisInteractionZoomByWheeling(false)
-const customZoomX = (_, event) => {
-    const interval = axisX.getInterval()
-    const range = interval.end - interval.start
-    const newRange = range + Math.sign(event.deltaY) * 0.1 * Math.abs(range)
-    axisX.setInterval({ start: interval.end - newRange, end: interval.end, stopAxisAfter: false })
-    event.preventDefault()
-    event.stopPropagation()
-}
-axisX.onAxisInteractionAreaMouseWheel(customZoomX)
-chart.onSeriesBackgroundMouseWheel(customZoomX)
-channels.forEach((channel) => {
-    channel.series.onMouseWheel(customZoomX)
 })
 
 // Add LCJS user interface button for resetting view.
@@ -101,7 +85,7 @@ const buttonReset = chart
     .setOrigin(UIOrigins.LeftBottom)
     .setMargin({ left: 4, bottom: 4 })
     .setDraggingMode(UIDraggingModes.notDraggable)
-buttonReset.onMouseClick((_) => {
+buttonReset.addEventListener('click', (event) => {
     const xMax = channels[0].series.getXMax()
     axisX.setInterval({ start: xMax - DEFAULT_X_RANGE_MS, end: xMax, stopAxisAfter: false })
     channels.forEach((channel) => channel.axisY.fit())
