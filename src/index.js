@@ -14,8 +14,7 @@ const DEFAULT_X_RANGE_MS = 10 * 1000
 const DASHBOARD_HEIGHT = 1400
 const dataPointsPerSecond = 1000 // 1000 Hz
 
-const { lightningChart, emptyLine, AxisTickStrategies, AxisScrollStrategies, UIOrigins, UIDraggingModes, emptyFill, Themes, DataSetXY } =
-    lcjs
+const { lightningChart, emptyLine, AxisTickStrategies, AxisScrollStrategies, UIOrigins, UIDraggingModes, emptyFill, Themes, DataSet } = lcjs
 
 const { createProgressiveFunctionGenerator } = xydata
 
@@ -50,7 +49,7 @@ const axisX = chart
     .setDefaultInterval((state) => ({ end: state.dataMax, start: (state.dataMax ?? 0) - DEFAULT_X_RANGE_MS, stopAxisAfter: false }))
 
 // Single data set with shared timestamps
-const dataSet = new DataSetXY({
+const dataSet = new DataSet({
     schema: {
         x: {
             auto: {
